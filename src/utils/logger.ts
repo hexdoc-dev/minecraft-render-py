@@ -13,7 +13,7 @@ export class Logger {
     return CATEGORIES;
   }
 
-  public static level = getLevelFromEnv() ?? CATEGORIES.debug;
+  public static level = getLevelFromEnv() || CATEGORIES.debug;
 
   static log(level: keyof typeof CATEGORIES, fn: LoggerCallback) {
     if (Logger.level >= CATEGORIES[level]) {
