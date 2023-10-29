@@ -1,48 +1,61 @@
 {
-  "name": "minecraft-render",
-  "version": "1.1.1",
-  "description": "Minecraft gui block/item renderer",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "name": "minecraft-render-py",
+  "version": "2.0.0",
+  "description": "Minecraft block/texture rendering with node.js and Python via JSII",
   "scripts": {
-    "build": "tsc",
-    "test": "nole ./src/**/*.test.ts"
-  },
-  "bin": {
-    "minecraft-render": "./bin/minecraft-render.js"
+    "build": "jsii",
+    "build:watch": "jsii --watch",
+    "package": "jsii-pacmak"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/co3moz/minecraft-render.git"
+    "url": "git+https://github.com/object-Object/minecraft-render-py.git"
   },
-  "bugs": {
-    "url": "https://github.com/co3moz/minecraft-render/issues"
-  },
-  "homepage": "https://github.com/co3moz/minecraft-render#readme",
-  "keywords": [
-    "minecraft",
-    "render",
-    "block",
-    "item"
-  ],
-  "author": "co3moz",
+  "author": "object-Object",
   "license": "MIT",
   "dependencies": {
+    "@digitak/esrun": "^3.2.25",
     "assign-deep": "^1.0.1",
-    "canvas": "^2.10.0",
-    "commander": "^8.1.0",
-    "crc": "^3.8.0",
-    "node-canvas-webgl": "^0.2.7",
-    "node-stream-zip": "^1.13.6",
-    "three": "^0.130.1"
+    "canvas": "^2.11.2",
+    "commander": "^11.1.0",
+    "crc": "^4.3.2",
+    "node-canvas-webgl": "^0.3.0",
+    "three": "^0.158.0"
   },
+  "bundleDependencies": [
+    "assign-deep",
+    "canvas",
+    "commander",
+    "crc",
+    "node-canvas-webgl",
+    "three"
+  ],
   "devDependencies": {
-    "@types/crc": "^3.4.0",
-    "@types/node-fetch": "^2.5.12",
-    "@types/three": "^0.130.1",
-    "mkdirp": "^1.0.4",
-    "node-fetch": "^2.6.1",
-    "nole": "^1.0.12",
-    "typescript": "^4.3.5"
+    "@types/crc": "^3.8.2",
+    "@types/node-fetch": "^2.6.7",
+    "@types/three": "^0.158.0",
+    "jsii": "^5.2.20",
+    "jsii-pacmak": "^1.91.0",
+    "mkdirp": "^3.0.1",
+    "node-fetch": "^3.3.2",
+    "nole": "^2.2.1",
+    "typescript": "^5.2.2"
+  },
+  "stability": "experimental",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "jsii": {
+    "tsc": {
+      "rootDir": "src",
+      "outDir": "build"
+    },
+    "outdir": "dist",
+    "versionFormat": "full",
+    "targets": {
+      "python": {
+        "distName": "minecraft-render-py",
+        "module": "minecraft_render"
+      }
+    }
   }
 }

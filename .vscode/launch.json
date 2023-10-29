@@ -5,22 +5,22 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch via NPM",
+      "name": "ts-node: Run current file",
+      "type": "node",
       "request": "launch",
-      "runtimeArgs": [
-        "run-script",
-        "test"
-      ],
-      "runtimeExecutable": "npm",
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
-      "type": "pwa-node",
-      "env": {
-        "BLOCK_NAMES": "sea_lantern,observer,command_block,slime_block,lectern,blast_furnace_on,prismarine",
-        "RENDER_FOLDER": "render/",
-        "LOGGER_LEVEL": "trace"
-      }
+      "args": ["${relativeFile}"],
+      "runtimeArgs": ["-r", "ts-node/register"],
+      "cwd": "${workspaceRoot}",
+      "internalConsoleOptions": "openOnSessionStart"
+    },
+    {
+      "name": "ts-node: Run test.ts",
+      "type": "node",
+      "request": "launch",
+      "args": ["test.ts"],
+      "runtimeArgs": ["-r", "ts-node/register"],
+      "cwd": "${workspaceRoot}",
+      "internalConsoleOptions": "openOnSessionStart"
     }
   ]
 }

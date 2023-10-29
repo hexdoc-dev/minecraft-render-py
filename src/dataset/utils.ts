@@ -1,3 +1,5 @@
+import { ResourcePath } from "./types";
+
 /**
  * Validates the format of a resource location
  * @param location resource location in formation namespace:path/to/item
@@ -8,20 +10,23 @@ export function validateResourceLocation(location: string) {
   }
 }
 
-export function normalizeResourceLocation(namespace: string, identifier?: string): [string, string]
-{
+export function normalizeResourceLocation(
+  namespace: string,
+  identifier?: string
+): [string, string] {
   if (identifier == undefined) {
-    if(!namespace.includes(":"))
-    {
+    if (!namespace.includes(":")) {
       return ["minecraft", namespace];
     }
-    return namespace.split(":", 2) as [string,string];
+    return namespace.split(":", 2) as [string, string];
   }
   return [namespace, identifier];
 }
 
-export function resourceLocationAsString(namespace: string, identifier?: string): string
-{
+export function resourceLocationAsString(
+  namespace: string,
+  identifier?: string
+): string {
   if (identifier == undefined) {
     validateResourceLocation(namespace);
     return namespace;
@@ -32,7 +37,7 @@ export function resourceLocationAsString(namespace: string, identifier?: string)
 }
 
 export function parseJSON<T>(data: Uint8Array): T {
-  return JSON.parse( (new TextDecoder).decode(data) ) as T;
+  return JSON.parse(new TextDecoder().decode(data)) as T;
 }
 
 export function constructPath(
@@ -40,13 +45,13 @@ export function constructPath(
   suffix: string,
   namespace: string,
   identifier?: string
-): string {
+): ResourcePath {
   try {
-    [namespace, identifier ] = normalizeResourceLocation(namespace, identifier);
+    [namespace, identifier] = normalizeResourceLocation(namespace, identifier);
     validateResourceLocation(namespace + ":" + identifier);
   } catch (e) {
-    throw new Error("Failed to construct path, " + (e as Error).message, {cause : e});
+    throw new Error("Failed to construct path, " + (e as Error).message);
   }
 
-  return `${namespace}/${objectType}/${identifier}.${suffix}`;
+  return { namespace, objectType, identifier, suffix };
 }

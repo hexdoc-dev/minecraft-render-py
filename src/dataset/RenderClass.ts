@@ -3,11 +3,9 @@ import * as rawCanvas from "canvas";
 import type {
   AnimationMeta,
   BlockFaces,
-  BlockModel,
   BlockSides,
   Element,
   Face,
-  Renderer,
   RendererOptions,
   Vector,
   Vector4,
@@ -20,15 +18,10 @@ import { makeAnimatedPNG } from "../utils/apng";
 import { ResourcePackLoader } from "./ResourcePackLoader";
 import { resourceLocationAsString } from "./utils";
 import { ModelBlock, RenderContext } from "./types";
+import * as fs from "fs";
+import * as path from "path";
 
-const MATERIAL_FACE_ORDER = [
-  "east",
-  "west",
-  "up",
-  "down",
-  "south",
-  "north",
-] as const;
+const MATERIAL_FACE_ORDER = ["east", "west", "up", "down", "south", "north"] as const;
 
 export class RenderClass {
   private loader: ResourcePackLoader;
@@ -44,21 +37,20 @@ export class RenderClass {
   constructor(
     loader: ResourcePackLoader,
     {
+      outDir,
       width = 1000,
       height = 1000,
       distance = 20,
       plane = 0,
       animation = true,
     }: RendererOptions
-    
   ) {
     this.loader = loader;
     this.scene = new THREE.Scene();
     this.canvas = createCanvas(width, height);
 
     Logger.debug(
-      () =>
-        `prepareRenderer(width=${width}, height=${height}, distance=${distance})`
+      () => `prepareRenderer(width=${width}, height=${height}, distance=${distance})`
     );
 
     this.renderer = new THREE.WebGLRenderer({
@@ -93,28 +85,13 @@ export class RenderClass {
       const origin = new THREE.Vector3(0, 0, 0);
       const length = 10;
       this.scene.add(
-        new THREE.ArrowHelper(
-          new THREE.Vector3(1, 0, 0),
-          origin,
-          length,
-          0xff0000
-        )
+        new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), origin, length, 0xff0000)
       );
       this.scene.add(
-        new THREE.ArrowHelper(
-          new THREE.Vector3(0, 1, 0),
-          origin,
-          length,
-          0x00ff00
-        )
+        new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), origin, length, 0x00ff00)
       );
       this.scene.add(
-        new THREE.ArrowHelper(
-          new THREE.Vector3(0, 0, 1),
-          origin,
-          length,
-          0x0000ff
-        )
+        new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), origin, length, 0x0000ff)
       );
 
       const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 3);
@@ -124,7 +101,7 @@ export class RenderClass {
       Logger.debug(() => `Plane added to scene`);
     }
 
-    this.options = { width, height, distance, plane, animation };
+    this.options = { outDir, width, height, distance, plane, animation };
   }
 
   async destroyRenderer() {
@@ -132,11 +109,25 @@ export class RenderClass {
 
     await new Promise((resolve) => setTimeout(resolve, 500));
     this.renderer.info.reset();
-    (this.canvas as any).__gl__
-      .getExtension("STACKGL_destroy_context")
-      .destroy();
+    (this.canvas as any).__gl__.getExtension("STACKGL_destroy_context").destroy();
 
     Logger.debug(() => `Renderer destroyed`);
+  }
+
+  async renderToFile(namespace: string, identifier?: string) {
+    const image = await this.render(namespace, identifier);
+    if (!image) return;
+
+    const resourceLocation = resourceLocationAsString(namespace, identifier);
+    [namespace, identifier] = resourceLocation.split(":");
+
+    const filePath = `${this.options.outDir}/assets/${namespace}/textures/block/${identifier}.png`;
+    const directoryPath = path.dirname(filePath);
+
+    await fs.promises.mkdir(directoryPath, { recursive: true });
+    await fs.promises.writeFile(filePath, image);
+
+    return filePath;
   }
 
   async render(namespace: string, identifier?: string): Promise<Buffer | null> {
@@ -157,7 +148,7 @@ export class RenderClass {
       rotationY: blockstate?.y ?? 0,
       rotationX: blockstate?.x ?? 0,
       currentTick: 0,
-      maxTicks: 0
+      maxTicks: 0,
     };
 
     const block = await this.loader.getCompiledModel(blockstate.model);
@@ -173,14 +164,12 @@ export class RenderClass {
     }
 
     Logger.trace(
-      () =>
-        `Started rendering ${resourceLocationAsString(namespace, identifier)}`
+      () => `Started rendering ${resourceLocationAsString(namespace, identifier)}`
     );
 
     camera.zoom = 1.0 / distance(gui.scale as Vector);
 
     Logger.trace(() => `Camera zoom = ${camera.zoom}`);
-
 
     // block.elements!.reverse();
 
@@ -199,9 +188,7 @@ export class RenderClass {
         Logger.trace(() => `Element[${i}] started rendering`);
         const calculatedSize = size(element.from!, element.to!);
 
-        Logger.trace(
-          () => `Element[${i}] geometry = ${calculatedSize!.join(",")}`
-        );
+        Logger.trace(() => `Element[${i}] geometry = ${calculatedSize!.join(",")}`);
 
         const geometry = new THREE.BoxGeometry(...calculatedSize, 1, 1, 1);
         const cube = new THREE.Mesh(
@@ -209,18 +196,13 @@ export class RenderClass {
           await this.constructBlockMaterial(renderContext, block, element)
         );
 
-        
-
         Logger.trace(
-          () =>
-            `Element[${i}] position set to ${cube.position.toArray().join(",")}`
+          () => `Element[${i}] position set to ${cube.position.toArray().join(",")}`
         );
 
         if (element.rotation) {
           const origin = mul(element.rotation.origin!, -0.0625);
-          cube.applyMatrix4(
-            new THREE.Matrix4().makeTranslation(...invert(origin))
-          );
+          cube.applyMatrix4(new THREE.Matrix4().makeTranslation(...invert(origin)));
 
           if (element.rotation.axis == "y") {
             cube.applyMatrix4(
@@ -270,7 +252,7 @@ export class RenderClass {
       scene.add(pivot);
 
       // Ok, X (first param, rotates around the block, not sure why the value is offset so?)
-      const rotation = new THREE.Vector3(...(gui.rotation ?? [0,0,0])).add(
+      const rotation = new THREE.Vector3(...(gui.rotation ?? [0, 0, 0])).add(
         new THREE.Vector3(105, -90, -45)
       );
       camera.position.set(
@@ -283,22 +265,18 @@ export class RenderClass {
         ])
       );
       camera.lookAt(0, 0, 0);
-      camera.position.add(new THREE.Vector3(...(gui.translation ?? [0,0,0])));
+      camera.position.add(new THREE.Vector3(...(gui.translation ?? [0, 0, 0])));
       camera.updateMatrix();
       camera.updateProjectionMatrix();
 
-      Logger.trace(
-        () => `Camera position set ${camera.position.toArray().join(",")}`
-      );
+      Logger.trace(() => `Camera position set ${camera.position.toArray().join(",")}`);
 
       renderer.render(scene, camera);
 
       const buffer = canvas.toBuffer("image/png");
       buffers.push(buffer);
 
-      Logger.trace(
-        () => `Image rendered, buffer size = ${buffer.byteLength} bytes`
-      );
+      Logger.trace(() => `Image rendered, buffer size = ${buffer.byteLength} bytes`);
 
       scene.remove(pivot);
 
@@ -312,7 +290,7 @@ export class RenderClass {
 
     return buffers.length == 1
       ? buffers[0]
-      : makeAnimatedPNG(buffers, (index) => ({
+      : makeAnimatedPNG(buffers, () => ({
           numerator: 1,
           denominator: 10,
         }));
@@ -320,7 +298,7 @@ export class RenderClass {
 
   async constructTextureMaterial(
     renderContext: RenderContext,
-    block: ModelBlock,
+    _block: ModelBlock,
     path: string,
     face: Face,
     element: Element,
@@ -330,9 +308,7 @@ export class RenderClass {
     const animatedCache = this.animatedCache;
     const image = cache[path]
       ? cache[path]
-      : (cache[path] = await loadImage(
-          await this.loader.getTextureAsBuffer(path)
-        ));
+      : (cache[path] = await loadImage(await this.loader.getTextureAsBuffer(path)));
 
     const animationMeta = animatedCache[path]
       ? animatedCache[path]
@@ -473,12 +449,9 @@ function decodeTexture(texture: string, block: ModelBlock): string | null {
     return texture;
   }
 
-  const correctedTextureName =
-    block.textures![texture.substring(1) as BlockSides]!;
+  const correctedTextureName = block.textures![texture.substring(1) as BlockSides]!;
 
-  Logger.trace(
-    () => `Texture "${texture}" decoded to "${correctedTextureName}"`
-  );
+  Logger.trace(() => `Texture "${texture}" decoded to "${correctedTextureName}"`);
 
   return decodeTexture(correctedTextureName, block);
 }
