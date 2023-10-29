@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from .dataset.Loader import PythonResourceLoader
 from .dataset.types import ResourcePath
 from .module import (
