@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2021 co3moz <doganderya59@gmail.com>, object-Object
+Copyright (c) 2023 object-Object <object@objectobject.ca>, co3moz <doganderya59@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

@@ -1,14 +1,23 @@
 {
   "name": "minecraft-render-py",
   "version": "2.0.0",
-  "description": "Minecraft block/texture rendering with node.js and Python via JSPyBridge",
+  "description": "Minecraft block/texture rendering with node.js and Python via JSPyBridge.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/object-Object/minecraft-render-py.git"
   },
-  "author": "object-Object",
+  "author": {
+    "name": "object-Object",
+    "email": "object@objectobject.ca"
+  },
+  "contributors": [
+    {
+      "name": "co3moz",
+      "email": "doganderya59@gmail.com"
+    }
+  ],
   "license": "MIT",
   "dependencies": {
     "assign-deep": "^1.0.1",

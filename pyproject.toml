@@ -1,0 +1,107 @@
+[build-system]
+requires = ["hatchling", "hatch-nodejs-version"]
+build-backend = "hatchling.build"
+
+[project]
+name = "minecraft-render-py"
+dynamic = ["version"]
+description = "Minecraft block/texture rendering with node.js and Python via JSPyBridge."
+authors = [
+    { name="object-Object", email="object@objectobject.ca" },
+    { name="co3moz", email="doganderya59@gmail.com" },
+]
+readme = "README.md"
+license = { file = "LICENSE.md" }
+requires-python = ">=3.11"
+dependencies = [
+    "javascript~=1!1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black==23.7.0",
+    "isort==5.12.0",
+    "hatchling",
+]
+
+[tool.hatch.version]
+source = "nodejs"
+
+[tool.hatch.build]
+artifacts = [
+    "src/minecraft_render/_dist",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "src/minecraft_render",
+]
+
+[tool.hatch.build.hooks.custom]
+path = "hatch_build.py"
+
+[tool.isort]
+profile = "black"
+combine_as_imports = true
+known_first_party = ["minecraft_render"]
+
+[tool.pyright]
+pythonVersion = "3.11"
+pythonPlatform = "All"
+
+include = [
+    "src/minecraft_render",
+]
+exclude = [
+    "venv",
+    "node_modules",
+]
+
+enableExperimentalFeatures = true
+
+typeCheckingMode = "basic"
+
+strictDictionaryInference = true
+strictListInference = true
+strictSetInference = true
+
+reportAssertAlwaysTrue = "error"
+reportConstantRedefinition = "error"
+reportDeprecated = "error"
+reportDuplicateImport = "error"
+reportFunctionMemberAccess = "error"
+reportIncompatibleMethodOverride = "error"
+reportIncompatibleVariableOverride = "error"
+reportIncompleteStub = "error"
+reportInconsistentConstructor = "error"
+reportInvalidStringEscapeSequence = "error"
+reportInvalidStubStatement = "error"
+reportInvalidTypeVarUse = "error"
+reportMatchNotExhaustive = "error"
+reportMissingParameterType = "error"
+reportOverlappingOverload = "error"
+reportSelfClsParameterName = "error"
+reportTypeCommentUsage = "error"
+reportUnknownParameterType = "error"
+reportUnnecessaryCast = "error"
+reportUnnecessaryContains = "error"
+reportUnsupportedDunderAll = "error"
+reportUntypedBaseClass = "error"
+reportUntypedClassDecorator = "error"
+reportUntypedFunctionDecorator = "error"
+reportUntypedNamedTuple = "error"
+reportWildcardImportFromLibrary = "error"
+
+reportMissingTypeArgument = "warning"
+reportPrivateUsage = "warning"
+reportUnknownArgumentType = "warning"
+reportUnknownLambdaType = "warning"
+reportUnknownMemberType = "warning"
+reportUnknownVariableType = "warning"
+reportUnnecessaryComparison = "warning"
+reportUnnecessaryIsInstance = "warning"
+reportUnusedClass = "warning"
+reportUnusedExpression = "warning"
+reportUnusedFunction = "warning"
+reportUnusedImport = "warning"
+reportUnusedVariable = "warning"
