@@ -7,7 +7,6 @@ import type {
   Element,
   Face,
   RendererOptions,
-  Vector,
   Vector4,
 } from "../utils/types";
 import { distance, invert, mul, size } from "../utils/vector-math";
@@ -23,13 +22,19 @@ import * as path from "path";
 
 const MATERIAL_FACE_ORDER = ["east", "west", "up", "down", "south", "north"] as const;
 
+const PREFERRED_VARIANTS = [
+  "facing=west",
+  "axis=y",
+  "attachment=floor",
+  "lit=false",
+] as const;
+
 export class RenderClass {
   private loader: ResourcePackLoader;
   private scene: THREE.Scene;
   private renderer: THREE.WebGLRenderer;
   private canvas: rawCanvas.Canvas;
   private camera: THREE.OrthographicCamera;
-  private light: THREE.DirectionalLight;
   private textureCache: { [key: string]: any } = {};
   private animatedCache: { [key: string]: AnimationMeta | null } = {};
   private options: RendererOptions;
@@ -45,6 +50,8 @@ export class RenderClass {
       animation = true,
     }: RendererOptions
   ) {
+    THREE.ColorManagement.enabled = true;
+
     this.loader = loader;
     this.scene = new THREE.Scene();
     this.canvas = createCanvas(width, height);
@@ -55,7 +62,7 @@ export class RenderClass {
 
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas as any,
-      antialias: true,
+      antialias: false,
       alpha: true,
       logarithmicDepthBuffer: true,
     });
@@ -63,6 +70,8 @@ export class RenderClass {
     Logger.trace(() => `WebGL initialized`);
 
     this.renderer.sortObjects = false;
+    // apparently this might technically be incorrect? but SRGBColorSpace is super washed out
+    this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
 
     const aspect = width / height;
     this.camera = new THREE.OrthographicCamera(
@@ -74,10 +83,11 @@ export class RenderClass {
       20000
     );
 
-    this.light = new THREE.DirectionalLight(0xffffff, 1.2);
-    this.light.position.set(20, 30, -15); // cube directions x => negative:bottom right, y => positive:top, z => negative:bottom left
-    this.light.lookAt(0, 0, 0);
-    this.scene.add(this.light);
+    // https://minecraft.wiki/w/Help:Isometric_renders#Preferences
+    // this is probably not the *correct* way to do this... but it's pretty close
+    this.addLight([0, 1, 0], 0.98);
+    this.addLight([1, 0, 0], 0.8);
+    this.addLight([0, 0, -1], 0.608);
 
     Logger.trace(() => `Light added to scene`);
 
@@ -104,6 +114,14 @@ export class RenderClass {
     this.options = { outDir, width, height, distance, plane, animation };
   }
 
+  addLight([x, y, z]: [number, number, number], intensityRatio: number) {
+    // 3.1 is trial and error to get close to the minecraft wiki renders
+    const light = new THREE.DirectionalLight(0xffffff, 3.1 * intensityRatio);
+    light.position.set(x, y, z);
+    light.lookAt(0, 0, 0);
+    this.scene.add(light);
+  }
+
   async destroyRenderer() {
     Logger.debug(() => `Renderer destroy in progress...`);
 
@@ -116,7 +134,6 @@ export class RenderClass {
 
   async renderToFile(namespace: string, identifier?: string) {
     const image = await this.render(namespace, identifier);
-    if (!image) return;
 
     const resourceLocation = resourceLocationAsString(namespace, identifier);
     [namespace, identifier] = resourceLocation.split(":");
@@ -130,17 +147,33 @@ export class RenderClass {
     return filePath;
   }
 
-  async render(namespace: string, identifier?: string): Promise<Buffer | null> {
+  variantSortKey(variant: string): number {
+    let sortKey = 0;
+    for (const preferred of PREFERRED_VARIANTS) {
+      if (variant.includes(preferred)) sortKey -= 1;
+    }
+    return sortKey;
+  }
+
+  variantCompareFn(a: string, b: string): number {
+    return this.variantSortKey(a) - this.variantSortKey(b);
+  }
+
+  async render(namespace: string, identifier?: string): Promise<Buffer> {
     const { canvas, renderer, scene, camera, options } = this;
 
     const blockstates = await this.loader.getBlockstate(namespace, identifier);
 
     if ("multipart" in blockstates) {
-      console.log("Multipart model, aborting!");
-      return null;
+      throw new Error("Multipart model, aborting!");
     }
 
-    let blockstate = blockstates.variants[Object.keys(blockstates.variants).sort()[0]];
+    const variant = Object.keys(blockstates.variants).sort(
+      this.variantCompareFn.bind(this)
+    )[0];
+    Logger.debug(() => `Selected variant for ${namespace}:${identifier} = ${variant}`);
+
+    let blockstate = blockstates.variants[variant];
     blockstate = Array.isArray(blockstate) ? blockstate[0] : blockstate;
 
     const renderContext: RenderContext = {
@@ -153,21 +186,17 @@ export class RenderClass {
 
     const block = await this.loader.getCompiledModel(blockstate.model);
 
-    const gui = block.display?.gui;
+    const gui = block.display?.gui ?? {};
 
-    if (!gui || !block.elements || !block.textures) {
-      Logger.debug(() =>
-        !gui ? "no gui" : !block.elements ? "no element" : "no texture"
-      );
-      console.log(!gui ? "no gui" : !block.elements ? "no element" : "no texture");
-      return null;
+    if (!block.elements || !block.textures) {
+      throw new Error(!gui ? "no gui" : !block.elements ? "no element" : "no texture");
     }
 
     Logger.trace(
       () => `Started rendering ${resourceLocationAsString(namespace, identifier)}`
     );
 
-    camera.zoom = 1.0 / distance(gui.scale as Vector);
+    camera.zoom = 1.0 / distance(gui.scale ?? [1, 1, 1]);
 
     Logger.trace(() => `Camera zoom = ${camera.zoom}`);
 
@@ -252,8 +281,9 @@ export class RenderClass {
       scene.add(pivot);
 
       // Ok, X (first param, rotates around the block, not sure why the value is offset so?)
+      // this Y value seems to match the minecraft wiki's isometric renders, but i have no clue why
       const rotation = new THREE.Vector3(...(gui.rotation ?? [0, 0, 0])).add(
-        new THREE.Vector3(105, -90, -45)
+        new THREE.Vector3(105, -80, -45)
       );
       camera.position.set(
         ...(rotation
