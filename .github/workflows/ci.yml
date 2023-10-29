@@ -78,10 +78,13 @@ jobs:
           name: build-js
           path: dist
 
+      - name: Rename tarball
+        run: mv dist/*.tgz package.tgz
+
       - name: Publish package
         uses: JS-DevTools/npm-publish@v3
         with:
-          package: dist/*.tgz
+          package: package.tgz
           token: ${{ secrets.NPM_TOKEN }}
           provenance: true
           access: public
