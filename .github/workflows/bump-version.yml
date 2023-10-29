@@ -4,7 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       version-type:
-        type: string
+        type: choice
+        options:
+          - none
+          - major
+          - minor
+          - patch
+          - prerelease
 
 jobs:
   bump-version:
@@ -18,5 +24,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          version-type: ${{ inputs.version-type }}
+          version-type: ${{ inputs.version-type != 'none' && inputs.version-type || '' }}
           tag-prefix: v
