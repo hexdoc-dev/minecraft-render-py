@@ -1,9 +1,12 @@
 {
-  "name": "minecraft-render",
-  "version": "2.0.0",
+  "name": "@leftsquarebracket/minecraft-render",
+  "version": "2.0.0-a1",
   "description": "Minecraft block/texture rendering with node.js and Python via JSPyBridge.",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/js/index.js",
+  "types": "dist/js/index.d.ts",
+  "files": [
+    "dist/js"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/object-Object/minecraft-render-py.git"

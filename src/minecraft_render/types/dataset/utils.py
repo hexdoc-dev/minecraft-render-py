@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from minecraft_render.dataset.types import ResourcePath
+from .types import ResourcePath
 
 
 class IResourcePathAsString(Protocol):

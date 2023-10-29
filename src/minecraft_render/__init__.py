@@ -1,5 +1,5 @@
-from .dataset.Loader import PythonResourceLoader
-from .dataset.types import ResourcePath
+from .types.dataset.Loader import IPythonResourceLoader
+from .types.dataset.types import ResourcePath
 from .module import (
     MinecraftAssetsLoader,
     PythonLoaderWrapper,
@@ -9,11 +9,11 @@ from .module import (
 )
 
 __all__ = [
-    "createMultiloader",
-    "resourcePathAsString",
-    "RenderClass",
+    "IPythonResourceLoader",
+    "ResourcePath",
     "MinecraftAssetsLoader",
     "PythonLoaderWrapper",
-    "ResourcePath",
-    "PythonResourceLoader",
+    "RenderClass",
+    "createMultiloader",
+    "resourcePathAsString",
 ]

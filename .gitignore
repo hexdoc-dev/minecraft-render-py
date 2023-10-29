@@ -19,4 +19,6 @@ output/
 venv/
 __pycache__/
 out/
-_dist/
+__npm_version__.py
+/src/minecraft_render/package.json
+*.tgz

@@ -1,8 +1,9 @@
+from typing import Protocol
 from ..utils.types import RendererOptions
 from .types import IResourceLoader
 
 
-class IRenderClass:
+class IRenderClass(Protocol):
     def __init__(self, loader: IResourceLoader, options: RendererOptions, /) -> None:
         ...
 

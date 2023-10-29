@@ -2,13 +2,14 @@ from typing import Protocol, cast
 
 import javascript as js
 
-from .dataset.Loader import (
+from .__npm_version__ import NPM_NAME, NPM_VERSION
+from .types.dataset.Loader import (
     ICreateMultiloader,
     IMinecraftAssetsLoader,
     IPythonLoaderWrapper,
 )
-from .dataset.RenderClass import IRenderClass
-from .dataset.utils import IResourcePathAsString
+from .types.dataset.RenderClass import IRenderClass
+from .types.dataset.utils import IResourcePathAsString
 
 
 class IMinecraftRenderModule(Protocol):
@@ -23,7 +24,7 @@ class IMinecraftRenderModule(Protocol):
 # we actually import the js module here
 _module = cast(
     IMinecraftRenderModule,
-    js.require("./_dist/index.js"),  # pyright: ignore[reportUnknownMemberType]
+    js.require(NPM_NAME, NPM_VERSION),  # pyright: ignore[reportUnknownMemberType]
 )
 
 createMultiloader = _module.createMultiloader

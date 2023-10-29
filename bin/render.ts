@@ -1,7 +1,6 @@
-import { RenderClass } from "../src/dataset/RenderClass";
-import { MinecraftAssetsLoader } from "../src/dataset/Loader";
-import { ResourcePackLoader } from "../src/dataset/ResourcePackLoader";
-import { Logger } from "../src/utils/logger";
+import { RenderClass } from "../lib/dataset/RenderClass";
+import { MinecraftAssetsLoader } from "../lib/dataset/Loader";
+import { Logger } from "../lib/utils/logger";
 
 (async () => {
   Logger.level = Logger.categories.debug;

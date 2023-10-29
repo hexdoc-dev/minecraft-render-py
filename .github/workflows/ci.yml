@@ -1,25 +1,99 @@
-name: Test
+name: Build and publish packages
 
-on: [push]
+on:
+  push:
+    branches: "*"
+  release:
+    types: [published]
+
+env:
+  PYTHON_VERSION: '3.111'
+  NODE_VERSION: '18.x'
 
 jobs:
-  test:
+  build-js:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
-      with:
-        node-version: '14'
-        cache: 'npm'
-    - run: npm install
-    - run: sudo apt-get install xvfb
-    - run: xvfb-run --auto-servernum npm test
-    - name: Archive production artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: test-result
-        path: |
-          test-data/*
-          !test-data/test.jar
-          !test-data/.gitignore
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Compile TypeScript
+        run: tsc --build
+
+      - name: Create tarball
+        id: pack
+        run: echo "tarball=$(npm pack)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-js
+          path: ${{ steps.pack.outputs.tarball }}
+
+  build-py:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install . hatch
+
+      - name: Build package
+        run: hatch build
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-py
+          path: dist/py
+
+  publish-npm:
+    runs-on: ubuntu-latest
+    needs: [build-js, build-py]
+    if: github.event_name == 'release'
+    environment:
+      name: npm
+      url: https://www.npmjs.com/package/@leftsquarebracket/minecraft-render
+    permissions:
+      id-token: write
+    steps:
+      - name: Download package artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: build-js
+
+      - name: Publish package
+        uses: JS-DevTools/npm-publish@v3
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
+          provenance: true
+          access: public
+
+  publish-pypi:
+    runs-on: ubuntu-latest
+    needs: [publish-npm]
+    if: github.event_name == 'release'
+    environment:
+      name: pypi
+      url: https://pypi.org/p/minecraft-render
+    permissions:
+      id-token: write
+    steps:
+      - name: Download package artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: build-py
+          path: dist
+
+      - name: Publish package
+        uses: pypa/gh-action-pypi-publish@release/v1

@@ -2,7 +2,9 @@
   "extends": "@tsconfig/recommended/tsconfig.json",
   "compilerOptions": {
     "target": "ES6",
-    "outDir": "src/minecraft_render/_dist"
+    "outDir": "dist/js",
+    "declaration": true,
+    "sourceMap": true
   },
   "include": ["lib"],
   "exclude": ["node_modules", "venv"]

@@ -15,21 +15,33 @@ license = { file = "LICENSE.md" }
 requires-python = ">=3.11"
 dependencies = [
     "javascript~=1!1.0",
+    "importlib_resources~=6.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "black==23.7.0",
     "isort==5.12.0",
-    "hatchling",
+    "hatch",
 ]
 
 [tool.hatch.version]
 source = "nodejs"
 
 [tool.hatch.build]
+directory = "dist/py"
 artifacts = [
-    "src/minecraft_render/_dist",
+    "src/minecraft_render/__npm_version__.py",
+]
+
+[tool.hatch.build.hooks.custom]
+path = "hatch_build.py"
+py-path = "src/minecraft_render/__npm_version__.py"
+
+[tool.hatch.build.targets.sdist]
+only-include = [
+    "src/minecraft_render",
+    "package.json",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -37,13 +49,12 @@ packages = [
     "src/minecraft_render",
 ]
 
-[tool.hatch.build.hooks.custom]
-path = "hatch_build.py"
-
 [tool.isort]
 profile = "black"
 combine_as_imports = true
-known_first_party = ["minecraft_render"]
+known_first_party = [
+    "minecraft_render",
+]
 
 [tool.pyright]
 pythonVersion = "3.11"

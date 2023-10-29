@@ -17,7 +17,7 @@ class IMinecraftAssetsLoader(IResourceLoader, Protocol):
         ...
 
 
-class PythonResourceLoader(Protocol):
+class IPythonResourceLoader(Protocol):
     def loadTexture(self, path: ResourcePath, /) -> str:
         """Returns a Base64-encoded string."""
         ...
@@ -28,5 +28,5 @@ class PythonResourceLoader(Protocol):
 
 
 class IPythonLoaderWrapper(IResourceLoader, Protocol):
-    def __init__(self, inner: PythonResourceLoader, /) -> None:
+    def __init__(self, inner: IPythonResourceLoader, /) -> None:
         ...
