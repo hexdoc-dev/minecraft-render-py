@@ -1,0 +1,21 @@
+name: Bump version and create tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      version-type:
+        type: string
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Bump version
+        uses: phips28/gh-action-bump-version@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          version-type: ${{ inputs.version-type }}
+          tag-prefix: v
