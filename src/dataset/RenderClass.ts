@@ -16,9 +16,10 @@ import { createCanvas, loadImage } from "node-canvas-webgl";
 import { makeAnimatedPNG } from "../utils/apng";
 import { ResourcePackLoader } from "./ResourcePackLoader";
 import { resourceLocationAsString } from "./utils";
-import { ModelBlock, RenderContext } from "./types";
+import { ModelBlock, RenderContext, ResourceLoader } from "./types";
 import * as fs from "fs";
 import * as path from "path";
+import { memoizeLoader } from "./Loader";
 
 const MATERIAL_FACE_ORDER = ["east", "west", "up", "down", "south", "north"] as const;
 
@@ -40,19 +41,20 @@ export class RenderClass {
   private options: RendererOptions;
 
   constructor(
-    loader: ResourcePackLoader,
+    loader: ResourceLoader,
     {
       outDir,
       width = 1000,
       height = 1000,
-      distance = 20,
+      distance = 11.65,
       plane = 0,
       animation = true,
     }: RendererOptions
   ) {
     THREE.ColorManagement.enabled = true;
 
-    this.loader = loader;
+    memoizeLoader(loader);
+    this.loader = new ResourcePackLoader(loader);
     this.scene = new THREE.Scene();
     this.canvas = createCanvas(width, height);
 
@@ -138,7 +140,7 @@ export class RenderClass {
     const resourceLocation = resourceLocationAsString(namespace, identifier);
     [namespace, identifier] = resourceLocation.split(":");
 
-    const filePath = `${this.options.outDir}/assets/${namespace}/textures/block/${identifier}.png`;
+    const filePath = `${this.options.outDir}/assets/${namespace}/textures/${identifier}.png`;
     const directoryPath = path.dirname(filePath);
 
     await fs.promises.mkdir(directoryPath, { recursive: true });

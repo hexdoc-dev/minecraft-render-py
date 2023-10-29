@@ -1,12 +1,9 @@
 {
   "name": "minecraft-render-py",
   "version": "2.0.0",
-  "description": "Minecraft block/texture rendering with node.js and Python via JSII",
-  "scripts": {
-    "build": "jsii",
-    "build:watch": "jsii --watch",
-    "package": "jsii-pacmak"
-  },
+  "description": "Minecraft block/texture rendering with node.js and Python via JSPyBridge",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/object-Object/minecraft-render-py.git"
@@ -22,42 +19,15 @@
     "node-canvas-webgl": "^0.3.0",
     "three": "^0.158.0"
   },
-  "bundleDependencies": [
-    "assign-deep",
-    "canvas",
-    "commander",
-    "crc",
-    "memoizee",
-    "node-canvas-webgl",
-    "three"
-  ],
   "devDependencies": {
+    "@tsconfig/recommended": "^1.0.3",
     "@types/crc": "^3.8.2",
     "@types/memoizee": "^0.4.10",
     "@types/node-fetch": "^2.6.7",
     "@types/three": "^0.158.0",
-    "jsii": "^5.2.20",
-    "jsii-pacmak": "^1.91.0",
     "mkdirp": "^3.0.1",
     "node-fetch": "^3.3.2",
     "nole": "^2.2.1",
     "typescript": "^5.2.2"
-  },
-  "stability": "experimental",
-  "main": "build/index.js",
-  "types": "build/index.d.ts",
-  "jsii": {
-    "tsc": {
-      "rootDir": "src",
-      "outDir": "build"
-    },
-    "outdir": "dist",
-    "versionFormat": "full",
-    "targets": {
-      "python": {
-        "distName": "minecraft-render-py",
-        "module": "minecraft_render"
-      }
-    }
   }
 }

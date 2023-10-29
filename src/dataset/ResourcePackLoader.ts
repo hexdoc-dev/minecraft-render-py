@@ -1,5 +1,5 @@
-//@ts-ignore
-import * as deepAssign from "assign-deep";
+// @ts-ignore
+import deepAssign from "assign-deep";
 import { AnimationMeta } from "../utils/types";
 import {
   ResourceLoader,

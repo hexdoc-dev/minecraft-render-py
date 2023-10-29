@@ -1,6 +1,6 @@
 import { Logger } from "../utils/logger";
 import { ModelBlock, ModelBlockstateFile, ResourceLoader, ResourcePath } from "./types";
-import * as memoize from "memoizee";
+import memoize from "memoizee";
 import { resourcePathAsString } from "./utils";
 
 export function memoizeLoader(loader: ResourceLoader) {
@@ -21,18 +21,26 @@ export function createMultiloader(...loaders: ResourceLoader[]): ResourceLoader 
       for (const childLoader of loaders) {
         try {
           return await childLoader.loadTexture(path);
-        } catch (e) {}
+        } catch (e) {
+          Logger.debug(() => `${e}`);
+        }
       }
-      throw new Error(`Could not load "${path}" from any source.`);
+      throw new Error(
+        `Could not load "${resourcePathAsString(path)}" from any source.`
+      );
     },
 
     async loadJSON(path: ResourcePath): Promise<any> {
       for (const childLoader of loaders) {
         try {
           return await childLoader.loadJSON(path);
-        } catch (e) {}
+        } catch (e) {
+          Logger.debug(() => `${e}`);
+        }
       }
-      throw new Error(`Could not load "${path}" from any source.`);
+      throw new Error(
+        `Could not load "${resourcePathAsString(path)}" from any source.`
+      );
     },
 
     async close() {
@@ -41,6 +49,30 @@ export function createMultiloader(...loaders: ResourceLoader[]): ResourceLoader 
   };
 
   return loader;
+}
+
+interface PythonResourceLoader {
+  // returns a Base64-encoded string
+  loadTexture(path: ResourcePath): Promise<string>;
+  // returns a JSON-encoded string
+  loadJSON(path: ResourcePath): Promise<string>;
+  close(): Promise<any>;
+}
+
+export class PythonLoaderWrapper implements ResourceLoader {
+  constructor(private inner: PythonResourceLoader) {}
+
+  async loadTexture(path: ResourcePath): Promise<Uint8Array> {
+    return Buffer.from(await this.inner.loadTexture(path), "base64");
+  }
+
+  async loadJSON(path: ResourcePath): Promise<any> {
+    return JSON.parse(await this.inner.loadJSON(path));
+  }
+
+  close(): Promise<any> {
+    return this.inner.close();
+  }
 }
 
 interface TextureContent {
@@ -183,9 +215,6 @@ function parsePath({ namespace, objectType, identifier }: ResourcePath) {
 }
 
 function decodeTexture(texture: string): Buffer {
-  if (!texture.startsWith("data:image/png;base64,"))
-    throw new Error(`Invalid texture: ${texture}`);
-
   texture = texture.replace("data:image/png;base64,", "");
   return Buffer.from(texture, "base64");
 }

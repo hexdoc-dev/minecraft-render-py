@@ -1,2 +1,7 @@
-// export { RenderClass } from "./dataset/RenderClass";
-// export { NodeMinecraftAssetsLoader, createMultiloader } from "./dataset/Loader";
+export { RenderClass } from "./dataset/RenderClass";
+export {
+  MinecraftAssetsLoader,
+  createMultiloader,
+  PythonLoaderWrapper,
+} from "./dataset/Loader";
+export { resourcePathAsString } from "./dataset/utils";
