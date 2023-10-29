@@ -1,5 +1,5 @@
 {
-  "name": "minecraft-render-py",
+  "name": "minecraft-render",
   "version": "2.0.0",
   "description": "Minecraft block/texture rendering with node.js and Python via JSPyBridge.",
   "main": "dist/index.js",
