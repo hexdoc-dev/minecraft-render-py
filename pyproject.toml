@@ -3,7 +3,7 @@ requires = ["hatchling", "hatch-nodejs-version"]
 build-backend = "hatchling.build"
 
 [project]
-name = "minecraft-render-py"
+name = "minecraft-render"
 dynamic = ["version"]
 description = "Minecraft block/texture rendering with node.js and Python via JSPyBridge."
 authors = [
