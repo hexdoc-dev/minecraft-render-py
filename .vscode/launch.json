@@ -14,10 +14,10 @@
       "internalConsoleOptions": "openOnSessionStart"
     },
     {
-      "name": "ts-node: Run test.ts",
+      "name": "ts-node: Run bin/render.ts",
       "type": "node",
       "request": "launch",
-      "args": ["test.ts"],
+      "args": ["bin/render.ts"],
       "runtimeArgs": ["-r", "ts-node/register"],
       "cwd": "${workspaceRoot}",
       "internalConsoleOptions": "openOnSessionStart"

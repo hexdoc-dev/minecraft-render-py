@@ -14,11 +14,11 @@
   "author": "object-Object",
   "license": "MIT",
   "dependencies": {
-    "@digitak/esrun": "^3.2.25",
     "assign-deep": "^1.0.1",
     "canvas": "^2.11.2",
     "commander": "^11.1.0",
     "crc": "^4.3.2",
+    "memoizee": "^0.4.15",
     "node-canvas-webgl": "^0.3.0",
     "three": "^0.158.0"
   },
@@ -27,11 +27,13 @@
     "canvas",
     "commander",
     "crc",
+    "memoizee",
     "node-canvas-webgl",
     "three"
   ],
   "devDependencies": {
     "@types/crc": "^3.8.2",
+    "@types/memoizee": "^0.4.10",
     "@types/node-fetch": "^2.6.7",
     "@types/three": "^0.158.0",
     "jsii": "^5.2.20",

@@ -55,3 +55,7 @@ export function constructPath(
 
   return { namespace, objectType, identifier, suffix };
 }
+
+export function resourcePathAsString(path: ResourcePath): string {
+  return `${path.namespace}/${path.objectType}/${path.identifier}.${path.suffix}`;
+}

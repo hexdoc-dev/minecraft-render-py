@@ -8,17 +8,15 @@ import {
   ModelBlockstateFile,
 } from "./types";
 import { constructPath } from "./utils";
-import { Logger } from "../utils/logger";
+import { memoizeLoader } from "./Loader";
 
 export class ResourcePackLoader {
-  private dataProvider: ResourceLoader;
-
-  constructor(dataProvider: ResourceLoader) {
-    this.dataProvider = dataProvider;
+  constructor(private loader: ResourceLoader) {
+    memoizeLoader(loader);
   }
 
   getBlockstate(namespace: string, identifier?: string): Promise<ModelBlockstateFile> {
-    return this.dataProvider.loadJSON(
+    return this.loader.loadJSON(
       constructPath("blockstates", "json", namespace, identifier)
     );
   }
@@ -40,8 +38,7 @@ export class ResourcePackLoader {
   }
 
   getTexture(namespace: string, identifier?: string): Promise<Uint8Array> {
-    Logger.debug(() => `getTexture(${namespace}, ${identifier})`);
-    return this.dataProvider.loadTexture(
+    return this.loader.loadTexture(
       constructPath("textures", "png", namespace, identifier)
     );
   }
@@ -51,7 +48,7 @@ export class ResourcePackLoader {
     identifier?: string
   ): Promise<AnimationMeta | null> {
     try {
-      return await this.dataProvider.loadJSON(
+      return await this.loader.loadJSON(
         constructPath("textures", "png.mcmeta", namespace, identifier)
       );
     } catch (e) {
@@ -64,9 +61,7 @@ export class ResourcePackLoader {
   }
 
   getModel(namespace: string, identifier?: string): Promise<ModelBlock> {
-    return this.dataProvider.loadJSON(
-      constructPath("models", "json", namespace, identifier)
-    );
+    return this.loader.loadJSON(constructPath("models", "json", namespace, identifier));
   }
 
   getModels(namespace: string, identifier?: string): Promise<ModelBlock[]> {

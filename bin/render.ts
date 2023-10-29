@@ -4,7 +4,7 @@ import { ResourcePackLoader } from "../src/dataset/ResourcePackLoader";
 import { Logger } from "../src/utils/logger";
 
 (async () => {
-  Logger.level = Logger.categories.info;
+  Logger.level = Logger.categories.debug;
 
   const loader = new ResourcePackLoader(
     await MinecraftAssetsLoader.fetchAll("master", "1.19.1")
@@ -12,9 +12,10 @@ import { Logger } from "../src/utils/logger";
 
   const renderer = new RenderClass(loader, { outDir: "out" });
   for (const [namespace, path] of [
-    ["minecraft", "oak_log"],
-    ["minecraft", "oak_trapdoor"],
-    ["minecraft", "observer"],
+    // ["minecraft", "oak_log"],
+    // ["minecraft", "oak_trapdoor"],
+    // ["minecraft", "observer"],
+    ["minecraft", "flower_pot"],
   ]) {
     console.log(await renderer.renderToFile(namespace, path));
   }

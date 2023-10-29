@@ -1,4 +1,19 @@
+import { Logger } from "../utils/logger";
 import { ModelBlock, ModelBlockstateFile, ResourceLoader, ResourcePath } from "./types";
+import * as memoize from "memoizee";
+import { resourcePathAsString } from "./utils";
+
+export function memoizeLoader(loader: ResourceLoader) {
+  loader.loadJSON = memoizeLoaderMethod(loader, loader.loadJSON);
+  loader.loadTexture = memoizeLoaderMethod(loader, loader.loadTexture);
+}
+
+function memoizeLoaderMethod<F extends Function>(loader: ResourceLoader, method: F) {
+  return memoize(method.bind(loader), {
+    normalizer: ([path]: [ResourcePath]) => resourcePathAsString(path),
+    promise: true,
+  });
+}
 
 export function createMultiloader(...loaders: ResourceLoader[]): ResourceLoader {
   const loader = {
@@ -56,6 +71,11 @@ export class MinecraftAssetsLoader implements ResourceLoader {
   }
 
   public async loadTexture(path: ResourcePath): Promise<Uint8Array> {
+    Logger.debug(
+      () =>
+        `loadTexture({${path.namespace}, ${path.objectType}, ${path.identifier}, ${path.suffix}})`
+    );
+
     const { type, name, isBlock } = parsePath(path);
     if (type != "texture")
       throw new Error(`Invalid path type, expected texture: ${type}`);
@@ -71,6 +91,11 @@ export class MinecraftAssetsLoader implements ResourceLoader {
   }
 
   public async loadJSON(path: ResourcePath): Promise<any> {
+    Logger.debug(
+      () =>
+        `loadJSON({${path.namespace}, ${path.objectType}, ${path.identifier}, ${path.suffix}})`
+    );
+
     const { type, name } = parsePath(path);
 
     let result;

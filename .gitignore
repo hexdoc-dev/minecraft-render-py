@@ -6,7 +6,6 @@ tsconfig.tsbuildinfo
 .idea
 .vs
 dist/
-.vscode
 *.map
 *.tsbuildinfo
 *.tabl.json
