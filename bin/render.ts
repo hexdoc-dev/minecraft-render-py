@@ -6,13 +6,19 @@ import { Logger } from "../lib/utils/logger";
   Logger.level = Logger.categories.debug;
 
   const loader = await MinecraftAssetsLoader.fetchAll("master", "1.19.1");
-  const renderer = new RenderClass(loader, { outDir: "out" });
+  const renderer = new RenderClass(loader, {
+    outDir: "out",
+    ambientLight: false,
+    plane: false,
+  });
 
   for (const [namespace, path] of [
-    ["minecraft", "oak_log"],
-    // ["minecraft", "oak_trapdoor"],
-    // ["minecraft", "observer"],
+    ["minecraft", "flower_pot"],
+    ["minecraft", "oak_planks"],
+    ["minecraft", "oak_stairs"],
+    ["minecraft", "oak_button"],
+    ["minecraft", "oak_pressure_plate"],
   ]) {
-    console.log(await renderer.renderToFile(namespace, path));
+    await renderer.renderToFile(namespace, path);
   }
 })();

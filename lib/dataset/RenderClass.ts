@@ -9,7 +9,7 @@ import type {
   RendererOptions,
   Vector4,
 } from "../utils/types";
-import { distance, invert, mul, size } from "../utils/vector-math";
+import { distance, invert, mul, radians, size } from "../utils/math";
 import { Logger } from "../utils/logger";
 //@ts-ignore
 import { createCanvas, loadImage } from "node-canvas-webgl";
@@ -26,8 +26,11 @@ const MATERIAL_FACE_ORDER = ["east", "west", "up", "down", "south", "north"] as 
 const PREFERRED_VARIANTS = [
   "facing=west",
   "axis=y",
+  "face=wall",
   "attachment=floor",
   "lit=false",
+  "powered=false",
+  "shape=straight",
 ] as const;
 
 export class RenderClass {
@@ -36,30 +39,36 @@ export class RenderClass {
   private renderer: THREE.WebGLRenderer;
   private canvas: rawCanvas.Canvas;
   private camera: THREE.OrthographicCamera;
+  private boom: THREE.Group;
   private textureCache: { [key: string]: any } = {};
   private animatedCache: { [key: string]: AnimationMeta | null } = {};
-  private options: RendererOptions;
+
+  private animation: boolean;
+  private outDir: string;
 
   constructor(
     loader: ResourceLoader,
     {
       outDir,
-      width = 1000,
-      height = 1000,
-      distance = 11.65,
-      plane = 0,
+      cameraSize = 25.3,
+      imageSize = 300,
+      plane = false,
       animation = true,
+      ambientLight = false,
     }: RendererOptions
   ) {
+    this.outDir = outDir;
+    this.animation = animation;
+
     THREE.ColorManagement.enabled = true;
 
     memoizeLoader(loader);
     this.loader = new ResourcePackLoader(loader);
     this.scene = new THREE.Scene();
-    this.canvas = createCanvas(width, height);
+    this.canvas = createCanvas(imageSize, imageSize);
 
     Logger.debug(
-      () => `prepareRenderer(width=${width}, height=${height}, distance=${distance})`
+      () => `prepareRenderer(width=height=${imageSize}, cameraSize=${cameraSize})`
     );
 
     this.renderer = new THREE.WebGLRenderer({
@@ -75,21 +84,34 @@ export class RenderClass {
     // apparently this might technically be incorrect? but SRGBColorSpace is super washed out
     this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
 
-    const aspect = width / height;
     this.camera = new THREE.OrthographicCamera(
-      -distance * aspect,
-      distance * aspect,
-      distance,
-      -distance,
+      -cameraSize / 2,
+      cameraSize / 2,
+      cameraSize / 2,
+      -cameraSize / 2,
       0.01,
       20000
     );
+
+    this.boom = new THREE.Group();
+    this.boom.add(this.camera);
+    this.scene.add(this.boom);
+
+    this.camera.position.set(32, 0, 0);
+    this.camera.lookAt(0, 0, 0);
+
+    this.boom.rotation.order = "YXZ";
+    this.boom.rotation.set(radians(0), radians(45), radians(30));
 
     // https://minecraft.wiki/w/Help:Isometric_renders#Preferences
     // this is probably not the *correct* way to do this... but it's pretty close
     this.addLight([0, 1, 0], 0.98);
     this.addLight([1, 0, 0], 0.8);
     this.addLight([0, 0, -1], 0.608);
+
+    if (ambientLight) {
+      this.scene.add(new THREE.AmbientLight(undefined, 0.75));
+    }
 
     Logger.trace(() => `Light added to scene`);
 
@@ -106,19 +128,21 @@ export class RenderClass {
         new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), origin, length, 0x0000ff)
       );
 
-      const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 3);
-      const helper = new THREE.PlaneHelper(plane, 30, 0xffff00);
-      this.scene.add(helper);
+      // const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+      // const helper = new THREE.PlaneHelper(plane, 30, 0xffff00);
+      // this.scene.add(helper);
+
+      const geometry = new THREE.BoxGeometry(16, 16, 16);
+      const wireframe = new THREE.WireframeGeometry(geometry);
+      const lines = new THREE.LineSegments(wireframe);
+      this.scene.add(lines);
 
       Logger.debug(() => `Plane added to scene`);
     }
-
-    this.options = { outDir, width, height, distance, plane, animation };
   }
 
   addLight([x, y, z]: [number, number, number], intensityRatio: number) {
-    // 3.1 is trial and error to get close to the minecraft wiki renders
-    const light = new THREE.DirectionalLight(0xffffff, 3.1 * intensityRatio);
+    const light = new THREE.DirectionalLight(0xffffff, 2.85 * intensityRatio);
     light.position.set(x, y, z);
     light.lookAt(0, 0, 0);
     this.scene.add(light);
@@ -140,7 +164,7 @@ export class RenderClass {
     const resourceLocation = resourceLocationAsString(namespace, identifier);
     [namespace, identifier] = resourceLocation.split(":");
 
-    const filePath = `${this.options.outDir}/assets/${namespace}/textures/${identifier}.png`;
+    const filePath = `${this.outDir}/assets/${namespace}/textures/${identifier}.png`;
     const directoryPath = path.dirname(filePath);
 
     await fs.promises.mkdir(directoryPath, { recursive: true });
@@ -149,20 +173,17 @@ export class RenderClass {
     return filePath;
   }
 
-  variantSortKey(variant: string): number {
+  sortVariant(variant: string): number {
     let sortKey = 0;
     for (const preferred of PREFERRED_VARIANTS) {
       if (variant.includes(preferred)) sortKey -= 1;
     }
+    if (variant.includes("face=wall") && variant.includes("facing=east")) sortKey -= 1;
     return sortKey;
   }
 
-  variantCompareFn(a: string, b: string): number {
-    return this.variantSortKey(a) - this.variantSortKey(b);
-  }
-
   async render(namespace: string, identifier?: string): Promise<Buffer> {
-    const { canvas, renderer, scene, camera, options } = this;
+    const { canvas, renderer, scene, camera, boom } = this;
 
     const blockstates = await this.loader.getBlockstate(namespace, identifier);
 
@@ -171,7 +192,7 @@ export class RenderClass {
     }
 
     const variant = Object.keys(blockstates.variants).sort(
-      this.variantCompareFn.bind(this)
+      (a, b) => this.sortVariant(a) - this.sortVariant(b)
     )[0];
     Logger.debug(() => `Selected variant for ${namespace}:${identifier} = ${variant}`);
 
@@ -198,11 +219,9 @@ export class RenderClass {
       () => `Started rendering ${resourceLocationAsString(namespace, identifier)}`
     );
 
-    camera.zoom = 1.0 / distance(gui.scale ?? [1, 1, 1]);
+    // camera.zoom = 1.0 / distance(gui.scale ?? [1, 1, 1]);
 
     Logger.trace(() => `Camera zoom = ${camera.zoom}`);
-
-    // block.elements!.reverse();
 
     const buffers = [];
 
@@ -232,26 +251,20 @@ export class RenderClass {
         );
 
         if (element.rotation) {
-          const origin = mul(element.rotation.origin!, -0.0625);
+          const origin = mul(element.rotation.origin!, -1 / 16);
           cube.applyMatrix4(new THREE.Matrix4().makeTranslation(...invert(origin)));
 
           if (element.rotation.axis == "y") {
             cube.applyMatrix4(
-              new THREE.Matrix4().makeRotationY(
-                THREE.MathUtils.DEG2RAD * element.rotation.angle!
-              )
+              new THREE.Matrix4().makeRotationY(radians(element.rotation.angle!))
             );
           } else if (element.rotation.axis == "x") {
             cube.applyMatrix4(
-              new THREE.Matrix4().makeRotationX(
-                THREE.MathUtils.DEG2RAD * element.rotation.angle!
-              )
+              new THREE.Matrix4().makeRotationX(radians(element.rotation.angle!))
             );
           } else if (element.rotation.axis == "z") {
             cube.applyMatrix4(
-              new THREE.Matrix4().makeRotationZ(
-                THREE.MathUtils.DEG2RAD * element.rotation.angle!
-              )
+              new THREE.Matrix4().makeRotationZ(radians(element.rotation.angle!))
             );
           }
 
@@ -277,27 +290,33 @@ export class RenderClass {
 
       pivot.add(modelGroup);
 
-      pivot.rotateY(THREE.MathUtils.DEG2RAD * renderContext.rotationY);
-      pivot.rotateX(THREE.MathUtils.DEG2RAD * renderContext.rotationX);
+      pivot.rotateY(radians(renderContext.rotationY));
+      pivot.rotateX(radians(renderContext.rotationX));
+
+      if (gui.translation)
+        modelGroup.position.add(new THREE.Vector3(...gui.translation));
 
       scene.add(pivot);
 
       // Ok, X (first param, rotates around the block, not sure why the value is offset so?)
       // this Y value seems to match the minecraft wiki's isometric renders, but i have no clue why
-      const rotation = new THREE.Vector3(...(gui.rotation ?? [0, 0, 0])).add(
-        new THREE.Vector3(105, -80, -45)
-      );
-      camera.position.set(
-        ...(rotation
-          .toArray()
-          .map((x) => Math.sin(x * THREE.MathUtils.DEG2RAD) * 16) as [
-          number,
-          number,
-          number
-        ])
-      );
-      camera.lookAt(0, 0, 0);
-      camera.position.add(new THREE.Vector3(...(gui.translation ?? [0, 0, 0])));
+      // const rotation = new THREE.Vector3(...(gui.rotation ?? [0, 0, 0])).add(
+      //   new THREE.Vector3(105, -80, -45)
+      // );
+      // camera.position.set(
+      //   ...(rotation
+      //     .toArray()
+      //     .map((x) => Math.sin(x * THREE.MathUtils.DEG2RAD) * 16) as [
+      //     number,
+      //     number,
+      //     number
+      //   ])
+      // );
+
+      // rotation: roll, pan, tilt
+
+      // camera.position.add(new THREE.Vector3(...(gui.translation ?? [0, 0, 0])));
+
       camera.updateMatrix();
       camera.updateProjectionMatrix();
 
@@ -316,7 +335,7 @@ export class RenderClass {
 
       Logger.trace(() => `Frame[${renderContext.currentTick}] completed`);
     } while (
-      options.animation &&
+      this.animation &&
       (renderContext.maxTicks ?? 1) > ++renderContext.currentTick
     );
 

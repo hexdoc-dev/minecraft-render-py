@@ -60,8 +60,15 @@ export class ResourcePackLoader {
     return Buffer.from(await this.getTexture(namespace, identifier));
   }
 
-  getModel(namespace: string, identifier?: string): Promise<ModelBlock> {
-    return this.loader.loadJSON(constructPath("models", "json", namespace, identifier));
+  async getModel(namespace: string, identifier?: string): Promise<ModelBlock> {
+    const path = constructPath("models", "json", namespace, identifier);
+    const inventoryPath = { ...path, identifier: path.identifier + "_inventory" };
+    try {
+      // prefer inventory-specific models if available (eg. for buttons)
+      return await this.loader.loadJSON(inventoryPath);
+    } catch (e) {
+      return await this.loader.loadJSON(path);
+    }
   }
 
   getModels(namespace: string, identifier?: string): Promise<ModelBlock[]> {

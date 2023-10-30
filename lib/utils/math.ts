@@ -1,4 +1,9 @@
+import THREE from "three";
 import { Vector } from "./types";
+
+export function radians(degrees: number): number {
+  return THREE.MathUtils.DEG2RAD * degrees;
+}
 
 export function size(from: Vector, to: Vector) {
   return [to[0] - from[0], to[1] - from[1], to[2] - from[2]] as const;

@@ -103,7 +103,7 @@ export class MinecraftAssetsLoader implements ResourceLoader {
   }
 
   public async loadTexture(path: ResourcePath): Promise<Uint8Array> {
-    Logger.debug(
+    Logger.trace(
       () =>
         `loadTexture({${path.namespace}, ${path.objectType}, ${path.identifier}, ${path.suffix}})`
     );
@@ -123,7 +123,7 @@ export class MinecraftAssetsLoader implements ResourceLoader {
   }
 
   public async loadJSON(path: ResourcePath): Promise<any> {
-    Logger.debug(
+    Logger.trace(
       () =>
         `loadJSON({${path.namespace}, ${path.objectType}, ${path.identifier}, ${path.suffix}})`
     );

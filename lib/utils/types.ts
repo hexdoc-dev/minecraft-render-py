@@ -95,10 +95,9 @@ export type AnimationMeta = {
 
 export interface RendererOptions {
   outDir: string;
-  width?: number;
-  height?: number;
-  distance?: number;
-  verbose?: number;
-  plane?: number;
+  cameraSize?: number;
+  imageSize?: number;
+  plane?: boolean;
   animation?: boolean;
+  ambientLight?: boolean;
 }

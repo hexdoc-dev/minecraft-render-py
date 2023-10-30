@@ -42,6 +42,8 @@ renderer.renderToFile("hexcasting", "akashic_record")
 print(minecraft_loader.buildURL("minecraft/item/stick.png"))
 
 # TODO:
-# - fix buildURL arguments
-# - add CI to build/publish to PyPI
-# - integrate with hexdoc
+# fix buildURL arguments
+# fix weird button/pressure plate/stairs rotations
+# send npm install output to stderr instead of stdout
+# add __main__ to allow doing eg. `python -m minecraft_render` to preinstall package
+# integrate with hexdoc
