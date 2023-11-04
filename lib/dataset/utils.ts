@@ -23,10 +23,19 @@ export function normalizeResourceLocation(
   return [namespace, identifier];
 }
 
-export function stripVariants(identifier: string): [string, string[]] {
-  const match = /^(?<identifier>[^\]]+)(?:\[(?<variants>[^\]]+)\])?$/.exec(identifier);
-  if (match == null || match.groups == null) return [identifier, []];
-  return [match.groups["identifier"], match.groups["variants"]?.split(",") ?? []];
+export function stripVariants(identifier: string): [string, string[], number?] {
+  // namespace:identifier[variants](index)
+  const match =
+    /^(?<identifier>[^\]]+?)(?:\[(?<variants>[^\]]+)\])?(?:\((?<index>\d+)\))?$/.exec(
+      identifier
+    );
+  if (match == null || match.groups == null) return [identifier, [], 0];
+
+  return [
+    match.groups["identifier"],
+    match.groups["variants"]?.split(",") ?? [],
+    match.groups["index"] != null ? Number.parseInt(match.groups["index"]) : undefined,
+  ];
 }
 
 export function resourceLocationAsString(

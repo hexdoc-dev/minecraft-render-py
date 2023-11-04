@@ -161,10 +161,13 @@ export class RenderClass {
   async renderToFile(namespace: string, identifier?: string) {
     const image = await this.render(namespace, identifier);
 
+    const index = stripVariants(identifier ?? namespace)[2];
     const resourceLocation = resourceLocationAsString(namespace, identifier);
     [namespace, identifier] = resourceLocation.split(":");
 
-    const filePath = `${this.outDir}/assets/${namespace}/textures/${identifier}.png`;
+    const filePath = `${this.outDir}/assets/${namespace}/textures/${identifier}${
+      index != null ? `_${index}` : ""
+    }.png`;
     const directoryPath = path.dirname(filePath);
 
     await fs.promises.mkdir(directoryPath, { recursive: true });
@@ -194,7 +197,7 @@ export class RenderClass {
       throw new Error("Multipart model, aborting!");
     }
 
-    const variants = stripVariants(identifier ?? namespace)[1];
+    const [_, variants, index] = stripVariants(identifier ?? namespace);
     const variant = Object.keys(blockstates.variants).sort(
       (a, b) => this.sortVariant(a, variants) - this.sortVariant(b, variants)
     )[0];
@@ -206,7 +209,7 @@ export class RenderClass {
     );
 
     let blockstate = blockstates.variants[variant];
-    blockstate = Array.isArray(blockstate) ? blockstate[0] : blockstate;
+    blockstate = Array.isArray(blockstate) ? blockstate[index ?? 0] : blockstate;
 
     const renderContext: RenderContext = {
       rotationY: blockstate?.y ?? 0,
