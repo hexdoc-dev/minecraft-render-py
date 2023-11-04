@@ -6,6 +6,7 @@ class ResourcePath(TypedDict):
     objectType: str
     identifier: str
     suffix: str
+    variants: list[str]
 
 
 class IResourceLoader(Protocol):

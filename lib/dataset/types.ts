@@ -5,6 +5,7 @@ export interface ResourcePath {
   readonly objectType: string;
   readonly identifier: string;
   readonly suffix: string;
+  readonly variants: string[];
 }
 
 //TODO - Rework this to return a buffer/blob instead
@@ -83,7 +84,6 @@ export type ModelBlock = {
 };
 
 export type RenderContext = {
-  identifier: string;
   rotationY: number;
   rotationX: number;
 

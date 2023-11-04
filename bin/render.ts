@@ -13,11 +13,12 @@ import { Logger } from "../lib/utils/logger";
   });
 
   for (const [namespace, path] of [
-    ["minecraft", "flower_pot"],
-    ["minecraft", "oak_planks"],
-    ["minecraft", "oak_stairs"],
-    ["minecraft", "oak_button"],
-    ["minecraft", "oak_pressure_plate"],
+    ["minecraft:campfire[lit=true]"],
+    // ["minecraft", "flower_pot"],
+    // ["minecraft", "oak_planks"],
+    // ["minecraft", "oak_stairs"],
+    // ["minecraft", "oak_button"],
+    // ["minecraft", "oak_pressure_plate"],
   ]) {
     await renderer.renderToFile(namespace, path);
   }

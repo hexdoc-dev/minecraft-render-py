@@ -15,7 +15,7 @@ import { Logger } from "../utils/logger";
 import { createCanvas, loadImage } from "node-canvas-webgl";
 import { makeAnimatedPNG } from "../utils/apng";
 import { ResourcePackLoader } from "./ResourcePackLoader";
-import { resourceLocationAsString } from "./utils";
+import { resourceLocationAsString, stripVariants } from "./utils";
 import { ModelBlock, RenderContext, ResourceLoader } from "./types";
 import * as fs from "fs";
 import * as path from "path";
@@ -173,17 +173,20 @@ export class RenderClass {
     return filePath;
   }
 
-  sortVariant(variant: string): number {
+  sortVariant(variant: string, extraPreferredVariants: string[]): number {
     let sortKey = 0;
     for (const preferred of PREFERRED_VARIANTS) {
       if (variant.includes(preferred)) sortKey -= 1;
+    }
+    for (const preferred of extraPreferredVariants) {
+      if (variant.includes(preferred)) sortKey -= 100;
     }
     if (variant.includes("face=wall") && variant.includes("facing=east")) sortKey -= 1;
     return sortKey;
   }
 
   async render(namespace: string, identifier?: string): Promise<Buffer> {
-    const { canvas, renderer, scene, camera, boom } = this;
+    const { canvas, renderer, scene, camera } = this;
 
     const blockstates = await this.loader.getBlockstate(namespace, identifier);
 
@@ -191,16 +194,21 @@ export class RenderClass {
       throw new Error("Multipart model, aborting!");
     }
 
+    const variants = stripVariants(identifier ?? namespace)[1];
     const variant = Object.keys(blockstates.variants).sort(
-      (a, b) => this.sortVariant(a) - this.sortVariant(b)
+      (a, b) => this.sortVariant(a, variants) - this.sortVariant(b, variants)
     )[0];
-    Logger.debug(() => `Selected variant for ${namespace}:${identifier} = ${variant}`);
+    Logger.debug(
+      () =>
+        `Selected variant for ${
+          identifier ? namespace + ":" + identifier : namespace
+        } = ${variant}`
+    );
 
     let blockstate = blockstates.variants[variant];
     blockstate = Array.isArray(blockstate) ? blockstate[0] : blockstate;
 
     const renderContext: RenderContext = {
-      identifier: resourceLocationAsString(namespace, identifier),
       rotationY: blockstate?.y ?? 0,
       rotationX: blockstate?.x ?? 0,
       currentTick: 0,
@@ -423,6 +431,17 @@ export class RenderClass {
 
     Logger.trace(() => `Face[${direction}] texture is ready`);
 
+    const shade = element.shade ?? true;
+
+    if (!shade)
+      return new THREE.MeshBasicMaterial({
+        map: texture,
+        color: 0xffffff,
+        transparent: true,
+        alphaTest: 0.1,
+        aoMapIntensity: 0,
+      });
+
     return new THREE.MeshStandardMaterial({
       map: texture,
       color: 0xffffff,
@@ -431,7 +450,7 @@ export class RenderClass {
       metalness: 0,
       emissive: 1,
       alphaTest: 0.1,
-      aoMapIntensity: "shade" in element && element.shade === false ? 0 : 1,
+      aoMapIntensity: 1,
     });
   }
 
