@@ -1,3 +1,4 @@
+import { ResourceLocation } from "../utils/resource";
 import { ResourcePath } from "./types";
 
 /**
@@ -10,49 +11,6 @@ export function validateResourceLocation(location: string) {
   }
 }
 
-export function normalizeResourceLocation(
-  namespace: string,
-  identifier?: string
-): [string, string] {
-  if (identifier == undefined) {
-    if (!namespace.includes(":")) {
-      return ["minecraft", namespace];
-    }
-    return namespace.split(":", 2) as [string, string];
-  }
-  return [namespace, identifier];
-}
-
-export function stripVariants(identifier: string): [string, string[], number?] {
-  // namespace:identifier[variants](index)
-  const match =
-    /^(?<identifier>[^\]]+?)(?:\[(?<variants>[^\]]+)\])?(?:\((?<index>\d+)\))?$/.exec(
-      identifier
-    );
-  if (match == null || match.groups == null) return [identifier, [], 0];
-
-  return [
-    match.groups["identifier"],
-    match.groups["variants"]?.split(",") ?? [],
-    match.groups["index"] != null ? Number.parseInt(match.groups["index"]) : undefined,
-  ];
-}
-
-export function resourceLocationAsString(
-  namespace: string,
-  identifier?: string
-): string {
-  if (identifier == undefined) {
-    namespace = stripVariants(namespace)[0];
-    validateResourceLocation(namespace);
-    return namespace;
-  } else {
-    identifier = stripVariants(identifier)[0];
-    validateResourceLocation(namespace + ":" + identifier);
-    return namespace + ":" + identifier;
-  }
-}
-
 export function parseJSON<T>(data: Uint8Array): T {
   return JSON.parse(new TextDecoder().decode(data)) as T;
 }
@@ -60,19 +18,20 @@ export function parseJSON<T>(data: Uint8Array): T {
 export function constructPath(
   objectType: string,
   suffix: string,
-  namespace: string,
-  identifier?: string
+  id: ResourceLocation
 ): ResourcePath {
-  let variants;
   try {
-    [namespace, identifier] = normalizeResourceLocation(namespace, identifier);
-    [identifier, variants] = stripVariants(identifier);
-    validateResourceLocation(namespace + ":" + identifier);
+    validateResourceLocation(id.toId());
   } catch (e) {
-    throw new Error("Failed to construct path, " + (e as Error).message);
+    throw new Error("Failed to construct path: " + (e as Error).message);
   }
 
-  return { namespace, objectType, identifier, suffix, variants };
+  return {
+    namespace: id.namespace,
+    objectType,
+    identifier: id.path,
+    suffix,
+  };
 }
 
 export function resourcePathAsString(path: ResourcePath): string {

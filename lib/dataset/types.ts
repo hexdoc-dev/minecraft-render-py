@@ -5,10 +5,8 @@ export interface ResourcePath {
   readonly objectType: string;
   readonly identifier: string;
   readonly suffix: string;
-  readonly variants: string[];
 }
 
-//TODO - Rework this to return a buffer/blob instead
 export interface ResourceLoader {
   loadTexture(path: ResourcePath): Promise<Uint8Array>;
   loadJSON(path: ResourcePath): Promise<any>;

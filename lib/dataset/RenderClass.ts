@@ -15,23 +15,13 @@ import { Logger } from "../utils/logger";
 import { createCanvas, loadImage } from "node-canvas-webgl";
 import { makeAnimatedPNG } from "../utils/apng";
 import { ResourcePackLoader } from "./ResourcePackLoader";
-import { resourceLocationAsString, stripVariants } from "./utils";
 import { ModelBlock, RenderContext, ResourceLoader } from "./types";
 import * as fs from "fs";
 import * as path from "path";
 import { memoizeLoader } from "./Loader";
+import { ResourceLocation } from "../utils/resource";
 
 const MATERIAL_FACE_ORDER = ["east", "west", "up", "down", "south", "north"] as const;
-
-const PREFERRED_VARIANTS = [
-  "facing=west",
-  "axis=y",
-  "face=wall",
-  "attachment=floor",
-  "lit=false",
-  "powered=false",
-  "shape=straight",
-] as const;
 
 export class RenderClass {
   private loader: ResourcePackLoader;
@@ -158,58 +148,35 @@ export class RenderClass {
     Logger.debug(() => `Renderer destroyed`);
   }
 
-  async renderToFile(namespace: string, identifier?: string) {
-    const image = await this.render(namespace, identifier);
+  async renderToFile(id: ResourceLocation, filename?: string) {
+    const image = await this.render(id);
 
-    const index = stripVariants(identifier ?? namespace)[2];
-    const resourceLocation = resourceLocationAsString(namespace, identifier);
-    [namespace, identifier] = resourceLocation.split(":");
+    filename ??= `${id.path}.png`;
+    const filePath = `${this.outDir}/assets/${id.namespace}/textures/${filename}`;
 
-    const filePath = `${this.outDir}/assets/${namespace}/textures/${identifier}${
-      index != null ? `_${index}` : ""
-    }.png`;
     const directoryPath = path.dirname(filePath);
-
     await fs.promises.mkdir(directoryPath, { recursive: true });
-    await fs.promises.writeFile(filePath, image);
 
+    await fs.promises.writeFile(filePath, image);
     return filePath;
   }
 
-  sortVariant(variant: string, extraPreferredVariants: string[]): number {
-    let sortKey = 0;
-    for (const preferred of PREFERRED_VARIANTS) {
-      if (variant.includes(preferred)) sortKey -= 1;
-    }
-    for (const preferred of extraPreferredVariants) {
-      if (variant.includes(preferred)) sortKey -= 100;
-    }
-    if (variant.includes("face=wall") && variant.includes("facing=east")) sortKey -= 1;
-    return sortKey;
-  }
-
-  async render(namespace: string, identifier?: string): Promise<Buffer> {
+  async render(id: ResourceLocation): Promise<Buffer> {
     const { canvas, renderer, scene, camera } = this;
 
-    const blockstates = await this.loader.getBlockstate(namespace, identifier);
+    const blockstates = await this.loader.getBlockstate(id);
 
     if ("multipart" in blockstates) {
       throw new Error("Multipart model, aborting!");
     }
 
-    const [_, variants, index] = stripVariants(identifier ?? namespace);
     const variant = Object.keys(blockstates.variants).sort(
-      (a, b) => this.sortVariant(a, variants) - this.sortVariant(b, variants)
+      (a, b) => id.sortVariant(a) - id.sortVariant(b)
     )[0];
-    Logger.debug(
-      () =>
-        `Selected variant for ${
-          identifier ? namespace + ":" + identifier : namespace
-        } = ${variant}`
-    );
+    Logger.debug(() => `Selected variant for ${id} = ${variant}`);
 
     let blockstate = blockstates.variants[variant];
-    blockstate = Array.isArray(blockstate) ? blockstate[index ?? 0] : blockstate;
+    blockstate = Array.isArray(blockstate) ? blockstate[id.variantIndex] : blockstate;
 
     const renderContext: RenderContext = {
       rotationY: blockstate?.y ?? 0,
@@ -218,7 +185,9 @@ export class RenderClass {
       maxTicks: 0,
     };
 
-    const block = await this.loader.getCompiledModel(blockstate.model);
+    const block = await this.loader.getCompiledModel(
+      ResourceLocation.parse(blockstate.model)
+    );
 
     const gui = block.display?.gui ?? {};
 
@@ -226,9 +195,7 @@ export class RenderClass {
       throw new Error(!gui ? "no gui" : !block.elements ? "no element" : "no texture");
     }
 
-    Logger.trace(
-      () => `Started rendering ${resourceLocationAsString(namespace, identifier)}`
-    );
+    Logger.trace(() => `Started rendering ${id}`);
 
     // camera.zoom = 1.0 / distance(gui.scale ?? [1, 1, 1]);
 
@@ -370,11 +337,15 @@ export class RenderClass {
     const animatedCache = this.animatedCache;
     const image = cache[path]
       ? cache[path]
-      : (cache[path] = await loadImage(await this.loader.getTextureAsBuffer(path)));
+      : (cache[path] = await loadImage(
+          await this.loader.getTextureAsBuffer(ResourceLocation.parse(path))
+        ));
 
     const animationMeta = animatedCache[path]
       ? animatedCache[path]
-      : (animatedCache[path] = await this.loader.getAnimationData(path));
+      : (animatedCache[path] = await this.loader.getAnimationData(
+          ResourceLocation.parse(path)
+        ));
 
     const width = image.width;
     let height = animationMeta ? width : image.height;

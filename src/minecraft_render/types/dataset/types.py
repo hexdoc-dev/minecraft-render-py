@@ -6,7 +6,6 @@ class ResourcePath(TypedDict):
     objectType: str
     identifier: str
     suffix: str
-    variants: list[str]
 
 
 class IResourceLoader(Protocol):
@@ -14,4 +13,7 @@ class IResourceLoader(Protocol):
         ...
 
     def loadJSON(self, path: ResourcePath, /) -> Any:
+        ...
+
+    def close(self) -> Any:
         ...

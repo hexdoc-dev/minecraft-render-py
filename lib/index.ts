@@ -1,3 +1,4 @@
+export { ResourceLocation } from "./utils/resource";
 export { RenderClass } from "./dataset/RenderClass";
 export {
   MinecraftAssetsLoader,

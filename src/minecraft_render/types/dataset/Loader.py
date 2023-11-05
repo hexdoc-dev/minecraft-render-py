@@ -1,4 +1,4 @@
-from typing import Protocol, Self
+from typing import Any, Protocol, Self
 
 from .types import IResourceLoader, ResourcePath
 
@@ -8,16 +8,7 @@ class ICreateMultiloader(Protocol):
         ...
 
 
-class IMinecraftAssetsLoader(IResourceLoader, Protocol):
-    @classmethod
-    def fetchAll(cls, ref: str, version: str, /) -> Self:
-        ...
-
-    def buildURL(self, path: str, /) -> str:
-        ...
-
-
-class IPythonResourceLoader(Protocol):
+class PythonResourceLoader(Protocol):
     def loadTexture(self, path: ResourcePath, /) -> str:
         """Returns a Base64-encoded string."""
         ...
@@ -26,7 +17,19 @@ class IPythonResourceLoader(Protocol):
         """Returns a JSON-encoded string."""
         ...
 
+    def close(self) -> Any:
+        ...
+
 
 class IPythonLoaderWrapper(IResourceLoader, Protocol):
-    def __init__(self, inner: IPythonResourceLoader, /) -> None:
+    def __init__(self, inner: PythonResourceLoader, /) -> None:
+        ...
+
+
+class IMinecraftAssetsLoader(IResourceLoader, Protocol):
+    @classmethod
+    def fetchAll(cls, ref: str, version: str, /) -> Self:
+        ...
+
+    def buildURL(self, path: str, /) -> str:
         ...

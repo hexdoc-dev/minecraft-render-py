@@ -1,2 +1,2 @@
 # import the js module to trigger the npm install
-from . import module as _
+from . import js_module as _

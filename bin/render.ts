@@ -1,6 +1,7 @@
 import { RenderClass } from "../lib/dataset/RenderClass";
 import { MinecraftAssetsLoader } from "../lib/dataset/Loader";
 import { Logger } from "../lib/utils/logger";
+import { ResourceLocation } from "../lib/utils/resource";
 
 (async () => {
   Logger.level = Logger.categories.debug;
@@ -12,16 +13,20 @@ import { Logger } from "../lib/utils/logger";
     plane: false,
   });
 
-  for (const [namespace, path] of [
-    ["minecraft:stone"],
-    ["minecraft:stone(1)"],
-    ["minecraft:campfire[lit=true]"],
+  const blocks: [string, string, string[]?, number?][] = [
+    ["minecraft", "stone"],
+    ["minecraft", "stone", [], 1],
+    ["minecraft", "campfire", ["lit=true"]],
     ["minecraft", "flower_pot"],
     ["minecraft", "oak_planks"],
     ["minecraft", "oak_stairs"],
     ["minecraft", "oak_button"],
     ["minecraft", "oak_pressure_plate"],
-  ]) {
-    await renderer.renderToFile(namespace, path);
+  ];
+
+  for (const [namespace, path, preferredVariants, variantIndex] of blocks) {
+    await renderer.renderToFile(
+      new ResourceLocation(namespace, path, preferredVariants, variantIndex)
+    );
   }
 })();

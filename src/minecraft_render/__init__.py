@@ -1,19 +1,12 @@
-from .types.dataset.Loader import IPythonResourceLoader
-from .types.dataset.types import ResourcePath
-from .module import (
-    MinecraftAssetsLoader,
-    PythonLoaderWrapper,
-    RenderClass,
-    createMultiloader,
-    resourcePathAsString,
-)
+__all__ = ["PythonResourceLoader", "ResourcePath", "require"]
 
-__all__ = [
-    "IPythonResourceLoader",
-    "ResourcePath",
-    "MinecraftAssetsLoader",
-    "PythonLoaderWrapper",
-    "RenderClass",
-    "createMultiloader",
-    "resourcePathAsString",
-]
+
+from .types.dataset.Loader import PythonResourceLoader
+from .types.dataset.types import ResourcePath
+
+
+def require():
+    """Lazy-import the JavaScript module."""
+    from .js_module import js_module
+
+    return js_module

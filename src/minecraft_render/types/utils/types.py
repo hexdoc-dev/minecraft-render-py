@@ -5,9 +5,8 @@ Number = int | float
 
 class RendererOptions(TypedDict, total=False):
     outDir: Required[str]
-    width: Number | None
-    height: Number | None
-    distance: Number | None
-    verbose: Number | None
-    plane: Number | None
+    cameraSize: Number | None
+    imageSize: Number | None
+    plane: bool | None
     animation: bool | None
+    ambientLight: bool | None

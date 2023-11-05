@@ -1,18 +1,18 @@
 import base64
 from pathlib import Path
 
-from minecraft_render import (
-    IPythonResourceLoader,
+from minecraft_render import PythonResourceLoader, ResourcePath
+from minecraft_render.js_module import (
     MinecraftAssetsLoader,
     PythonLoaderWrapper,
     RenderClass,
-    ResourcePath,
+    ResourceLocation,
     createMultiloader,
     resourcePathAsString,
 )
 
 
-class HexdocResourceLoader(IPythonResourceLoader):
+class HexdocResourceLoader(PythonResourceLoader):
     def loadTexture(self, resource_path: ResourcePath) -> str:
         path = f"../HexMod/Common/src/main/resources/assets/{resourcePathAsString(resource_path)}"
         print(f"find: {path}")
@@ -27,6 +27,9 @@ class HexdocResourceLoader(IPythonResourceLoader):
         print(f"load: {path}")
         return Path(path).read_text("utf-8")
 
+    def close(self):
+        pass
+
 
 minecraft_loader = MinecraftAssetsLoader.fetchAll("master", "1.19.1")
 
@@ -37,7 +40,7 @@ loader = createMultiloader(
 
 renderer = RenderClass(loader, {"outDir": "out"})
 
-renderer.renderToFile("hexcasting", "akashic_record")
+renderer.renderToFile(ResourceLocation("hexcasting", "akashic_record"))
 
 print(minecraft_loader.buildURL("minecraft/item/stick.png"))
 

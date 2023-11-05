@@ -10,25 +10,29 @@ from .types.dataset.Loader import (
 )
 from .types.dataset.RenderClass import IRenderClass
 from .types.dataset.utils import IResourcePathAsString
+from .types.utils.resource import IResourceLocation
 
 
 class IMinecraftRenderModule(Protocol):
     createMultiloader: ICreateMultiloader
     resourcePathAsString: IResourcePathAsString
 
-    RenderClass: type[IRenderClass]
     MinecraftAssetsLoader: type[IMinecraftAssetsLoader]
     PythonLoaderWrapper: type[IPythonLoaderWrapper]
+    RenderClass: type[IRenderClass]
+    ResourceLocation: type[IResourceLocation]
 
 
-# we actually import the js module here
-_module = cast(
+# import the JavaScript module
+js_module = cast(
     IMinecraftRenderModule,
     js.require(NPM_NAME, NPM_VERSION),  # pyright: ignore[reportUnknownMemberType]
 )
 
-createMultiloader = _module.createMultiloader
-resourcePathAsString = _module.resourcePathAsString
-RenderClass = _module.RenderClass
-MinecraftAssetsLoader = _module.MinecraftAssetsLoader
-PythonLoaderWrapper = _module.PythonLoaderWrapper
+createMultiloader = js_module.createMultiloader
+resourcePathAsString = js_module.resourcePathAsString
+
+MinecraftAssetsLoader = js_module.MinecraftAssetsLoader
+PythonLoaderWrapper = js_module.PythonLoaderWrapper
+RenderClass = js_module.RenderClass
+ResourceLocation = js_module.ResourceLocation

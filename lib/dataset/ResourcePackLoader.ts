@@ -9,23 +9,19 @@ import {
 } from "./types";
 import { constructPath } from "./utils";
 import { memoizeLoader } from "./Loader";
+import { ResourceLocation } from "../utils/resource";
 
 export class ResourcePackLoader {
   constructor(private loader: ResourceLoader) {
     memoizeLoader(loader);
   }
 
-  getBlockstate(namespace: string, identifier?: string): Promise<ModelBlockstateFile> {
-    return this.loader.loadJSON(
-      constructPath("blockstates", "json", namespace, identifier)
-    );
+  getBlockstate(id: ResourceLocation): Promise<ModelBlockstateFile> {
+    return this.loader.loadJSON(constructPath("blockstates", "json", id));
   }
 
-  getDefaultModelblockstate(
-    namespace: string,
-    identifier?: string
-  ): Promise<ModelBlockstate> {
-    return this.getBlockstate(namespace, identifier).then((record) => {
+  getDefaultModelblockstate(id: ResourceLocation): Promise<ModelBlockstate> {
+    return this.getBlockstate(id).then((record) => {
       try {
         if ("variants" in record) {
           let blockstate = Object.values(record.variants)[0];
@@ -37,31 +33,24 @@ export class ResourcePackLoader {
     });
   }
 
-  getTexture(namespace: string, identifier?: string): Promise<Uint8Array> {
-    return this.loader.loadTexture(
-      constructPath("textures", "png", namespace, identifier)
-    );
+  getTexture(id: ResourceLocation): Promise<Uint8Array> {
+    return this.loader.loadTexture(constructPath("textures", "png", id));
   }
 
-  async getAnimationData(
-    namespace: string,
-    identifier?: string
-  ): Promise<AnimationMeta | null> {
+  async getAnimationData(id: ResourceLocation): Promise<AnimationMeta | null> {
     try {
-      return await this.loader.loadJSON(
-        constructPath("textures", "png.mcmeta", namespace, identifier)
-      );
+      return await this.loader.loadJSON(constructPath("textures", "png.mcmeta", id));
     } catch (e) {
       return null;
     }
   }
 
-  async getTextureAsBuffer(namespace: string, identifier?: string): Promise<Buffer> {
-    return Buffer.from(await this.getTexture(namespace, identifier));
+  async getTextureAsBuffer(id: ResourceLocation): Promise<Buffer> {
+    return Buffer.from(await this.getTexture(id));
   }
 
-  async getModel(namespace: string, identifier?: string): Promise<ModelBlock> {
-    const path = constructPath("models", "json", namespace, identifier);
+  async getModel(id: ResourceLocation): Promise<ModelBlock> {
+    const path = constructPath("models", "json", id);
     const inventoryPath = { ...path, identifier: path.identifier + "_inventory" };
     try {
       // prefer inventory-specific models if available (eg. for buttons)
@@ -71,11 +60,11 @@ export class ResourcePackLoader {
     }
   }
 
-  getModels(namespace: string, identifier?: string): Promise<ModelBlock[]> {
-    return this.getModel(namespace, identifier).then((model) => {
+  getModels(id: ResourceLocation): Promise<ModelBlock[]> {
+    return this.getModel(id).then((model) => {
       // If we have a parent
       if (model.parent != undefined) {
-        return this.getModels(model.parent).then((models) => {
+        return this.getModels(ResourceLocation.parse(model.parent)).then((models) => {
           return models.concat(model);
         });
       } else {
@@ -84,8 +73,8 @@ export class ResourcePackLoader {
     });
   }
 
-  getCompiledModel(namespace: string, identifier?: string): Promise<ModelBlock> {
-    return this.getModels(namespace, identifier).then((models) =>
+  getCompiledModel(id: ResourceLocation): Promise<ModelBlock> {
+    return this.getModels(id).then((models) =>
       models.reduce((o, m) => deepAssign(o, m), {})
     ) as Promise<ModelBlock>;
   }
