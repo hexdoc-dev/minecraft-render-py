@@ -9,7 +9,12 @@ class IRenderClass(Protocol):
     def __init__(self, loader: IResourceLoader, options: RendererOptions, /) -> None:
         ...
 
-    def renderToFile(self, id: IResourceLocation, filename: str = ..., /) -> str:
+    def renderToFile(
+        self,
+        id: IResourceLocation,
+        filename: str = ...,
+        /,
+    ) -> tuple[str, str] | None:
         ...
 
     def destroyRenderer(self) -> None:

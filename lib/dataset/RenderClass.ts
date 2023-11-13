@@ -148,51 +148,66 @@ export class RenderClass {
     Logger.debug(() => `Renderer destroyed`);
   }
 
-  async renderToFile(id: ResourceLocation, filename?: string) {
+  async renderToFile(
+    id: ResourceLocation,
+    filename?: string
+  ): Promise<[string, string] | undefined> {
     const image = await this.render(id);
+    if (image == null) return;
 
     filename ??= `${id.path}.png`;
-    const filePath = `${this.outDir}/assets/${id.namespace}/textures/${filename}`;
+    const basePath = `assets/${id.namespace}/textures/${filename}`;
+    const filePath = `${this.outDir}/${basePath}`;
 
     const directoryPath = path.dirname(filePath);
     await fs.promises.mkdir(directoryPath, { recursive: true });
 
     await fs.promises.writeFile(filePath, image);
-    return filePath;
+    return [this.outDir, basePath];
   }
 
-  async render(id: ResourceLocation): Promise<Buffer> {
+  async render(id: ResourceLocation): Promise<Buffer | undefined> {
     const { canvas, renderer, scene, camera } = this;
 
-    const blockstates = await this.loader.getBlockstate(id);
-
-    if ("multipart" in blockstates) {
-      throw new Error("Multipart model, aborting!");
-    }
-
-    const variant = Object.keys(blockstates.variants).sort(
-      (a, b) => id.sortVariant(a) - id.sortVariant(b)
-    )[0];
-    Logger.debug(() => `Selected variant for ${id} = ${variant}`);
-
-    let blockstate = blockstates.variants[variant];
-    blockstate = Array.isArray(blockstate) ? blockstate[id.variantIndex] : blockstate;
-
-    const renderContext: RenderContext = {
-      rotationY: blockstate?.y ?? 0,
-      rotationX: blockstate?.x ?? 0,
+    let renderContext: RenderContext = {
       currentTick: 0,
       maxTicks: 0,
     };
 
-    const block = await this.loader.getCompiledModel(
-      ResourceLocation.parse(blockstate.model)
-    );
+    let rotationX = 0;
+    let rotationY = 0;
+
+    let blockId = id;
+
+    // try to get the id from the blockstates, but fall back to the provided id if we can't find it
+    const blockstates = await this.loader.tryGetBlockstate(id);
+    if (blockstates != null) {
+      if ("multipart" in blockstates) {
+        console.error("Multipart model, aborting!");
+        return;
+      }
+
+      const variant = Object.keys(blockstates.variants).sort(
+        (a, b) => id.sortVariant(a) - id.sortVariant(b)
+      )[0];
+      Logger.debug(() => `Selected variant for ${id} = ${variant}`);
+
+      let blockstate = blockstates.variants[variant];
+      blockstate = Array.isArray(blockstate) ? blockstate[id.variantIndex] : blockstate;
+
+      rotationY = blockstate?.y ?? 0;
+      rotationX = blockstate?.x ?? 0;
+
+      blockId = ResourceLocation.parse(blockstate.model);
+    }
+
+    const block = await this.loader.getCompiledModel(blockId);
 
     const gui = block.display?.gui ?? {};
 
     if (!block.elements || !block.textures) {
-      throw new Error(!gui ? "no gui" : !block.elements ? "no element" : "no texture");
+      console.error(!gui ? "no gui" : !block.elements ? "no element" : "no texture");
+      return;
     }
 
     Logger.trace(() => `Started rendering ${id}`);
@@ -268,8 +283,8 @@ export class RenderClass {
 
       pivot.add(modelGroup);
 
-      pivot.rotateY(radians(renderContext.rotationY));
-      pivot.rotateX(radians(renderContext.rotationX));
+      pivot.rotateY(radians(rotationY));
+      pivot.rotateX(radians(rotationX));
 
       if (gui.translation)
         modelGroup.position.add(new THREE.Vector3(...gui.translation));

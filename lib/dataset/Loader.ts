@@ -148,7 +148,7 @@ export class MinecraftAssetsLoader implements ResourceLoader {
 
   public async close(): Promise<any> {}
 
-  public buildURL(path: string): string {
+  public async buildURL(path: string): Promise<string> {
     if (!path.startsWith("minecraft/"))
       throw new Error("Unsupported namespace: " + path);
 
@@ -157,7 +157,20 @@ export class MinecraftAssetsLoader implements ResourceLoader {
       .replace(/^block\//, "blocks/")
       .replace(/^item\//, "items/");
 
-    return this.buildRawURL(path);
+    const url = this.buildRawURL(path);
+
+    const response = await fetch(url, { method: "HEAD" });
+    if (!response.ok) {
+      // fallback to the pregenerated texture i guess???????
+      const name = path.replace(/^blocks\//, "").replace(/^items\//, "");
+      if (name in this.textures) return this.textures[name];
+
+      throw new Error(
+        `Failed to validate generated url ${url}: ${response.statusText}`
+      );
+    }
+
+    return url;
   }
 
   protected buildRawURL(path: string): string {

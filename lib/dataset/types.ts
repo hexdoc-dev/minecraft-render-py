@@ -82,9 +82,6 @@ export type ModelBlock = {
 };
 
 export type RenderContext = {
-  rotationY: number;
-  rotationX: number;
-
   animation?: AnimationMeta;
   currentTick: number;
   maxTicks: number;

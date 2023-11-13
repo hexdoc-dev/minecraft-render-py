@@ -20,6 +20,12 @@ export class ResourcePackLoader {
     return this.loader.loadJSON(constructPath("blockstates", "json", id));
   }
 
+  async tryGetBlockstate(id: ResourceLocation) {
+    try {
+      return await this.getBlockstate(id);
+    } catch (e) {}
+  }
+
   getDefaultModelblockstate(id: ResourceLocation): Promise<ModelBlockstate> {
     return this.getBlockstate(id).then((record) => {
       try {
