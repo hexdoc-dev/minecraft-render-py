@@ -1,6 +1,17 @@
+__all__ = [
+    "createMultiloader",
+    "JavaScriptError",
+    "MinecraftAssetsLoader",
+    "PythonLoaderWrapper",
+    "RenderClass",
+    "ResourceLocation",
+    "resourcePathAsString",
+]
+
 from typing import Protocol, cast
 
-import javascript as js
+import javascript
+from javascript.errors import JavaScriptError
 
 from .__npm_version__ import NPM_NAME, NPM_VERSION
 from .types.dataset.Loader import (
@@ -24,15 +35,18 @@ class IMinecraftRenderModule(Protocol):
 
 
 # import the JavaScript module
-js_module = cast(
+_js_module = cast(
     IMinecraftRenderModule,
-    js.require(NPM_NAME, NPM_VERSION),  # pyright: ignore[reportUnknownMemberType]
+    javascript.require(  # pyright: ignore[reportUnknownMemberType]
+        name=NPM_NAME,
+        version=NPM_VERSION,
+    ),
 )
 
-createMultiloader = js_module.createMultiloader
-resourcePathAsString = js_module.resourcePathAsString
+createMultiloader = _js_module.createMultiloader
+resourcePathAsString = _js_module.resourcePathAsString
 
-MinecraftAssetsLoader = js_module.MinecraftAssetsLoader
-PythonLoaderWrapper = js_module.PythonLoaderWrapper
-RenderClass = js_module.RenderClass
-ResourceLocation = js_module.ResourceLocation
+MinecraftAssetsLoader = _js_module.MinecraftAssetsLoader
+PythonLoaderWrapper = _js_module.PythonLoaderWrapper
+RenderClass = _js_module.RenderClass
+ResourceLocation = _js_module.ResourceLocation
