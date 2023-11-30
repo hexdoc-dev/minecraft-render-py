@@ -29,7 +29,7 @@ xvfb-run --auto-servernum minecraft-render ...
 
 ### Notes
 
-<https://minecraft.fandom.com/wiki/Tutorials/Models#Block_states>
+<https://minecraft.wiki/w/Tutorials/Models>
 
 - Rework system
 - Detach Jar from data reading (interface to provide info, allow for directory sources, or prioritized stacks)
